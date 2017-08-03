@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using Microsoft.AspNetCore.Http;
 
 /// <summary>
 /// Google Analytics Measurement Protocol
@@ -21,6 +22,60 @@ public class GAMP {
     /// <param name="options">Values to send.</param>
     public static void PostSingle(Options options) {
         PostToGA(new List<Options> {options});
+    }
+
+    /// <summary>
+    /// Send a single hit, analyzed from request, to GA.
+    /// </summary>
+    public static void PostSingle(HttpRequest request, Options options) {
+        var rnd = new Random();
+        var cid = rnd.Next(1, int.MaxValue);
+
+        var op = new Options {
+            AnonymousCliendID = cid.ToString(),
+            Page = request.Path.ToString(),
+            UserIP = request.HttpContext.Connection.RemoteIpAddress.ToString(),
+            UserAgent = request.Headers["User-Agent"].ToString()
+        };
+
+        if (!string.IsNullOrWhiteSpace(options.Version)) {
+            op.Version = options.Version;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.TrackingID)) {
+            op.TrackingID = options.TrackingID;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.AnonymousCliendID)) {
+            op.AnonymousCliendID = options.AnonymousCliendID;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.HitType)) {
+            op.HitType = options.HitType;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.Page)) {
+            op.Page = options.Page;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.UserIP)) {
+            op.UserIP = options.UserIP;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.UserAgent)) {
+            op.UserAgent = options.UserAgent;
+        }
+
+        if (options.CustomValues != null &&
+            options.CustomValues.Any()) {
+            op.CustomValues = new Dictionary<string, string>();
+
+            foreach (var item in options.CustomValues) {
+                op.CustomValues.Add(item.Key, item.Value);
+            }
+        }
+
+        PostSingle(op);
     }
 
     /// <summary>
